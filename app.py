@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import pandas as pd
 import finnhub
@@ -59,6 +57,7 @@ def main():
 
     # Calculate and display the final investment value
     final_investment_value = Norm.iloc[-1]['Normalised']
+    st.success(f"Initial Investment Value: {initial_investment:.2f}")
     st.success(f"Final Investment Value: {final_investment_value:.2f}")
     st.success(f"Total return on investment is: {((final_investment_value-initial_investment)/initial_investment*100).round(2)} %")
 
