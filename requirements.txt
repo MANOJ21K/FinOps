@@ -1,1 +1,1 @@
-finnhub
+finnhub-python==2.4.18
