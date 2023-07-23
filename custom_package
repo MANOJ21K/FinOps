@@ -1,0 +1,123 @@
+import finnhub
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Setup client
+finnhub_client = finnhub.Client(api_key="YOUR_FINNHUB_API_KEY")
+
+
+    ''' Class for analyzing Financial Instruments like stocks.
+    
+    Attributes
+    ==========
+    ticker:str
+        ticker symbol with which to work with
+    start: str
+        start date for data retrival
+    end: str
+        end date for data retrival
+        
+    Methods
+    =======
+    get_data:
+        Retrives daily price data from finnhub and prepares the data
+    log_returns:
+        Calculates the log returns
+    plot_prices:
+        Create a price trend shart
+    plot_returns:
+        plots log returns either as timestamp('ts') or as histogram('hist')
+    set_ticker:
+        sets a new ticker
+    mean_return:
+        Calculates the mean return
+    std_returns:
+        Calculates the standard deviation of returns (risk)
+    annualized_perf:
+        Calculates the annual risk and return of the stock
+    '''
+
+    def __init__(self, ticker, start, end):
+        self._ticker = ticker
+        self.start = start
+        self.end = end
+        self.get_data()
+        self.log_returns()
+    
+    def __repr__(self):
+        return f"FinancialInstrument(ticker = {self._ticker}, start = {self.start}, end = {self.end})"
+    
+    def get_data(self):
+        '''Retrives daily price data from finnhub and prepares the data
+        '''
+        #converting date to int format
+        start_timestamp = pd.Timestamp(self.start).timestamp()
+        end_timestamp = pd.Timestamp(self.end).timestamp()
+        start_date =int(start_timestamp)
+        end_date =  int(end_timestamp)
+
+        #reading it into dataframe
+        Data = pd.DataFrame(finnhub_client.stock_candles(self._ticker, "D", start_date, end_date))
+        Data = Data[['c', 'h', 'l', 'o', 't', 'v']]
+        Data.columns = ['Close', 'High', 'Low', 'Open', 'Date', 'Volume']
+        Data['Date'] = Data['Date'].map(lambda x: pd.to_datetime(x, unit='s').date())
+        Data['Symbol'] = self._ticker
+        Data = Data[['Symbol', 'Date', 'Close']]
+        Data.columns = ['Ticker', 'Date', 'Price']
+        Data.set_index('Date', inplace=True)
+        self.data = Data
+        
+    def log_returns(self):
+        '''Calculates the log returns
+        '''
+        self.data['log_returns'] = np.log(self.data.Price/self.data.Price.shift(1))
+        
+    def plot_prices(self):
+        '''Create a price trend shart
+        '''
+        self.data.Price.plot(figsize = (12,8))
+        plt.title(f"Price Chart: {self._ticker}")
+    
+    def plot_returns(self, kind = 'ts'):
+        '''plots log returns either as timestamp('ts') or as histogram('hist')
+        '''
+        if kind == "ts":
+            self.data.log_returns.plot(figsize=(12,8))
+            plt.title(f"Returns: {self._ticker}")
+        elif kind == 'hist':
+            self.data.log_returns.hist(figsize = (12,8), bins=int(np.sqrt(len(self.data))))
+            plt.title(f"Frequency of Returns: {self._ticker}")
+            
+    def set_ticker(self, ticker = None):
+        '''sets a new ticker
+        '''
+        if ticker is not None:
+            self._ticker = ticker
+            
+    def mean_returns(self, freq = None):
+        '''Calculates the mean return
+        '''
+        if freq is None:
+            return self.data.log_returns.mean()
+        else:
+            resampled_price = self.data.Price.resample(freq).last()
+            resampled_returns = np.log(resampled_price/resampled_price.shift(1))
+            return resampled_returns.mean()
+                                       
+    def std_returns(self, freq = None):
+        '''Calculates the standard deviation of returns (risk)
+        '''
+        if freq is None:
+            return self.data.log_returns.std()
+        else:
+            resampled_price = self.data.Price.resample(freq).last()
+            resampled_returns = np.log(resampled_price/resampled_price.shift(1))
+            return resampled_returns.std()
+    
+    def annualized_perf(self):
+        '''Calculates the annual risk and return of the stock
+        '''
+        mean_return = round(self.data.log_returns.mean()*252, 3)
+        risk = round(self.data.log_returns.std() * np.sqrt(252), 3)
+        print(f"Return: {mean_return} | Risk: {risk}")
