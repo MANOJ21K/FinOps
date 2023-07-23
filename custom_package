@@ -3,42 +3,43 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Setup client
-finnhub_client = finnhub.Client(api_key="YOUR_FINNHUB_API_KEY")
 
+''' Class for analyzing Financial Instruments like stocks.
 
-    ''' Class for analyzing Financial Instruments like stocks.
-    
-    Attributes
-    ==========
-    ticker:str
-        ticker symbol with which to work with
-    start: str
-        start date for data retrival
-    end: str
-        end date for data retrival
-        
-    Methods
-    =======
-    get_data:
-        Retrives daily price data from finnhub and prepares the data
-    log_returns:
-        Calculates the log returns
-    plot_prices:
-        Create a price trend shart
-    plot_returns:
-        plots log returns either as timestamp('ts') or as histogram('hist')
-    set_ticker:
-        sets a new ticker
-    mean_return:
-        Calculates the mean return
-    std_returns:
-        Calculates the standard deviation of returns (risk)
-    annualized_perf:
-        Calculates the annual risk and return of the stock
-    '''
+Attributes
+==========
+api:
+    provide the api key of finnhub
+ticker:str
+    ticker symbol with which to work with
+start: str
+    start date for data retrival
+end: str
+    end date for data retrival
 
-    def __init__(self, ticker, start, end):
+Methods
+=======
+get_data:
+    Retrives daily price data from finnhub and prepares the data
+log_returns:
+    Calculates the log returns
+plot_prices:
+    Create a price trend shart
+plot_returns:
+    plots log returns either as timestamp('ts') or as histogram('hist')
+set_ticker:
+    sets a new ticker
+mean_return:
+    Calculates the mean return
+std_returns:
+    Calculates the standard deviation of returns (risk)
+annualized_perf:
+    Calculates the annual risk and return of the stock
+'''
+
+class FinancialInstrument():
+    def __init__(self, api, ticker, start, end):
+        self.api = finnhub.Client(api_key=api)
         self._ticker = ticker
         self.start = start
         self.end = end
@@ -56,7 +57,7 @@ finnhub_client = finnhub.Client(api_key="YOUR_FINNHUB_API_KEY")
         end_timestamp = pd.Timestamp(self.end).timestamp()
         start_date =int(start_timestamp)
         end_date =  int(end_timestamp)
-
+        finnhub_client = self.api
         #reading it into dataframe
         Data = pd.DataFrame(finnhub_client.stock_candles(self._ticker, "D", start_date, end_date))
         Data = Data[['c', 'h', 'l', 'o', 't', 'v']]
